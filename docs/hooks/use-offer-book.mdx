@@ -6,10 +6,11 @@ date: 2026-06-02
 
 # useOfferBook
 
-The `useOfferBook` hook queries Stellar's decentralized exchange (DEX) order books, enabling trading interfaces and price discovery.
+The `useOfferBook` hook queries one Stellar DEX buying/selling asset pair and returns bids, asks, loading/error state, and manual refresh controls.
 
 <Note>
-  **Ships in:** default, js, defi, js-defi
+  **Ships in:** TypeScript `default` and `defi` and JavaScript `js-template` and
+  `js-defi`
   <br />
   Not in your scaffold? Run `nextellar add defi`
 </Note>
@@ -35,6 +36,12 @@ export default function OrderBook() {
   );
 
   if (loading) return <div>Loading order book...</div>;
+  if (error)
+    return (
+      <div>
+        {error.message} <button onClick={refresh}>Retry</button>
+      </div>
+    );
 
   return (
     <div>
@@ -88,9 +95,8 @@ type Asset = 'XLM' | { code: string; issuer: string };
 | `limit`          | `number`         | `20`                                                        | Number of offers per side                                                                                            |
 | `pollIntervalMs` | `number \| null` | `null`                                                      | When set, the hook refetches the book on this interval (in milliseconds)                                             |
 
-### Return Value
+type Asset = 'XLM' | { code: string; issuer: string };
 
-```typescript
 interface OfferBookState {
   bids: Offer[];
   asks: Offer[];
@@ -215,11 +221,24 @@ Validate the assets before querying the order book so malformed pairs fail befor
 If Horizon is unavailable, keep the last known book visible and expose `refresh()` so the user can retry.
 
 ```tsx
-if (error) {
+type Asset = 'XLM' | { code: string; issuer: string };
+
+export function OrderBookRetry({
+  buying,
+  selling,
+}: {
+  buying: Asset;
+  selling: Asset;
+}) {
+  const { error, refresh } = useOfferBook(buying, selling);
+  if (!error) return null;
+
   return (
     <div>
       <p>{error.message}</p>
-      <button onClick={refresh}>Retry</button>
+      <button type="button" onClick={() => void refresh()}>
+        Retry
+      </button>
     </div>
   );
 }
